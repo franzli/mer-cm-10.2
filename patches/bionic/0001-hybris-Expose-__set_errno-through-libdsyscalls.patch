@@ -1,0 +1,148 @@
+From 37d09a69d0dc6cfe9e1f08ad5b18d43d0db1829c Mon Sep 17 00:00:00 2001
+From: Thomas Perl <m@thp.io>
+Date: Thu, 17 Oct 2013 13:02:10 +0200
+Subject: [PATCH 1/2] [hybris] Expose __set_errno through libdsyscalls
+
+This allows libhybris to override the function and pass
+errno changes from system calls from bionic to glibc.
+
+Change-Id: If9575592fdfcedd783a1d247d47b8d9e00a2d780
+---
+ libc/Android.mk              | 33 +++++++++++++++++++++++++++++++--
+ libc/bionic/__set_errno.cpp  |  7 +++++++
+ libc/hybris/libdsyscalls.cpp | 31 +++++++++++++++++++++++++++++++
+ 3 files changed, 69 insertions(+), 2 deletions(-)
+ create mode 100644 libc/hybris/libdsyscalls.cpp
+
+diff --git a/libc/Android.mk b/libc/Android.mk
+index 787a884..a59cdd2 100644
+--- a/libc/Android.mk
++++ b/libc/Android.mk
+@@ -269,7 +269,6 @@ libc_bionic_src_files := \
+     bionic/raise.cpp \
+     bionic/sbrk.cpp \
+     bionic/scandir.cpp \
+-    bionic/__set_errno.cpp \
+     bionic/setlocale.cpp \
+     bionic/signalfd.cpp \
+     bionic/sigwait.cpp \
+@@ -373,6 +372,9 @@ ifeq ($(TARGET_ARCH),arm)
+ libc_common_src_files += \
+ 	string/strncmp.c \
+ 
++libc_static_common_src_files += \
++    bionic/__set_errno.cpp
++
+ # These files need to be arm so that gdbserver
+ # can set breakpoints in them without messing
+ # up any thumb code.
+@@ -802,6 +804,32 @@ LOCAL_SYSTEM_SHARED_LIBRARIES :=
+ 
+ include $(BUILD_STATIC_LIBRARY)
+ 
++# ========================================================
++# libdsyscalls.so
++# ========================================================
++include $(CLEAR_VARS)
++
++LOCAL_SRC_FILES := \
++	$(libc_arch_static_src_files) \
++	$(libc_static_common_src_files) \
++	bionic/dlmalloc.c \
++	bionic/malloc_debug_common.cpp \
++	hybris/libdsyscalls.cpp
++
++LOCAL_C_INCLUDES := $(libc_common_c_includes)
++LOCAL_CFLAGS := $(libc_common_cflags)
++
++LOCAL_MODULE:= libdsyscalls
++
++LOCAL_SHARED_LIBRARIES := libdl
++LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
++LOCAL_SYSTEM_SHARED_LIBRARIES :=
++
++LOCAL_LDFLAGS := -Wl,--exclude-libs=libgcc.a
++
++LOCAL_MODULE_TAGS := optional
++
++include $(BUILD_SHARED_LIBRARY)
+ 
+ # ========================================================
+ # libc.a
+@@ -872,7 +900,7 @@ LOCAL_REQUIRED_MODULES := tzdata
+ # create an "cloaked" dependency on libgcc.a in libc though the libraries, which is not what
+ # you wanted!
+ 
+-LOCAL_SHARED_LIBRARIES := libdl
++LOCAL_SHARED_LIBRARIES := libdl libdsyscalls
+ LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
+ LOCAL_SYSTEM_SHARED_LIBRARIES :=
+ 
+@@ -938,6 +966,7 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+ LOCAL_SHARED_LIBRARIES := libc libdl
+ LOCAL_WHOLE_STATIC_LIBRARIES := libc_common
+ LOCAL_SYSTEM_SHARED_LIBRARIES :=
++LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
+ 
+ # Don't install on release build
+ LOCAL_MODULE_TAGS := eng debug
+diff --git a/libc/bionic/__set_errno.cpp b/libc/bionic/__set_errno.cpp
+index af6a68e..24a4126 100644
+--- a/libc/bionic/__set_errno.cpp
++++ b/libc/bionic/__set_errno.cpp
+@@ -31,8 +31,15 @@
+ // This function is called from our assembler syscall stubs.
+ // C/C++ code should just assign 'errno' instead.
+ 
++#ifdef LIBC_STATIC
++// hybris: Only define this function here if we are building the static libc.
++// For the dynamic libc, the __set_errno() function is in libdsyscalls.so, so
++// we can hook and override it from within libhybris.
++
+ // TODO: this should be __LIBC_HIDDEN__ but was exposed in <errno.h> in the NDK.
+ extern "C" int __set_errno(int n) {
+   errno = n;
+   return -1;
+ }
++
++#endif /* LIBC_STATIC */
+diff --git a/libc/hybris/libdsyscalls.cpp b/libc/hybris/libdsyscalls.cpp
+new file mode 100644
+index 0000000..2d2f593
+--- /dev/null
++++ b/libc/hybris/libdsyscalls.cpp
+@@ -0,0 +1,31 @@
++/*
++ * Copyright (C) 2007 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <errno.h>
++
++/* Define __set_errno here so it can be hijacked by libhybris
++ * at runtime (called from __set_syscall_errno)
++ */
++extern "C" int __set_errno(int n)
++{
++    errno = n;
++    return -1;
++}
++
++// XXX fix a build issue
++__LIBC_HIDDEN__ void __libc_postfini(void)
++{
++}
+-- 
+1.8.3.1
+

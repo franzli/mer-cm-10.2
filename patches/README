@@ -1,0 +1,5 @@
+Various patches that need to be applied on top of CM 10.2.
+
+See also:
+https://github.com/thp/android_bionic/commits/libhybris-cm-10.2
+https://github.com/thp/android_kernel_asus_grouper/commits/mer-cm-10.2

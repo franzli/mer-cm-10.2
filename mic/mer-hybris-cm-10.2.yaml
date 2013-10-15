@@ -1,0 +1,69 @@
+ExternalConfigs:
+  - /usr/share/kickstarter-configs/mer
+
+RepositoryURLVariables:
+  "@MER_RELEASE@": latest
+  "@TOOLS_RELEASE@": rolling
+  "@ARCH@": armv7hl
+
+Repositories:
+  - Name: mer-tools
+    Url:  http://repo.merproject.org/releases/mer-tools/@TOOLS_RELEASE@/builds/@ARCH@/packages/
+
+  - Name: mer:qt:devel
+    Url: http://repo.merproject.org/obs/mer:/qt:/devel/@MER_RELEASE@_@ARCH@/
+
+  - Name: hybris-adaptation-cm-10.2
+    Url: http://repo.merproject.org/obs/home:/thp:/hybris/@MER_RELEASE@_@ARCH@/
+
+Mer Minimal:
+  RepositoryOptions: --save
+  Inherit:
+    - Mer Connectivity
+  ExtraPackages:
+    - net-tools
+    - openssh-clients
+    - openssh-server
+    - vim
+    - vim-enhanced
+  PostScripts:
+    - arch-armv7hl.post
+
+Hybris CM 10.2:
+  Repos:
+    - hybris-adaptation-cm-10.2
+  ExtraPackages:
+    - libhybris-cm-10.2
+    - libhybris-cm-10.2-libEGL
+    - libhybris-cm-10.2-libGLESv1
+    - libhybris-cm-10.2-libGLESv2
+    - libhybris-cm-10.2-libOpenCL
+    - libhybris-cm-10.2-libOpenVG
+    - libhybris-cm-10.2-libcamera
+    - libhybris-cm-10.2-libhardware
+    - libhybris-cm-10.2-libis
+    - libhybris-cm-10.2-libnfc
+    - libhybris-cm-10.2-libsf
+    - libhybris-cm-10.2-libsync
+    - libhybris-cm-10.2-libui
+    - libhybris-cm-10.2-libwayland-egl
+    - libhybris-cm-10.2-tests
+  PostScripts:
+    - mer-hybris-cm-10.2.post
+
+Wayland Qt 5:
+  Repos:
+    - mer:qt:devel
+  ExtraPackages:
+    - qt5-qtgui
+    - qt5-qtwayland-wayland_egl
+
+Configurations:
+  - Name: mer-hybris-cm-10.2
+    Active: True
+    FileName: mer-hybris-cm-10.2
+    Inherit:
+      - Mer Base System
+      - Mer Minimal
+      - Hybris CM 10.2
+      - Wayland Qt 5

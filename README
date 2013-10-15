@@ -1,0 +1,24 @@
+Mer on top of CyanogenMod 10.2
+==============================
+
+Preparations in Mer Platform SDK:
+
+  sudo zypper in mer-kickstarter-configs
+
+Patching CyanogenMod's libc:
+
+  HERE=$(pwd)
+  cd /path/to/android/bionic/
+  git am $HERE/patches/bionic/*
+
+Patching CyanogenMod's kernel (device-specific):
+
+  HERE=$(pwd)
+  cd /path/to/android/kernel/asus/grouper/
+  git am $HERE/patches/kernel/asus/grouper/*
+
+Building the image:
+
+  cd mic
+  mer-kickstarter -o ks -c mer-hybris-cm-10.2.yaml
+  sudo mic create fs --arch armv7hl ks/mer-hybris-cm-10.2.ks
