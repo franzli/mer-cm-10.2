@@ -16,6 +16,15 @@ Repositories:
   - Name: hybris-adaptation-cm-10.2
     Url: http://repo.merproject.org/obs/home:/thp:/hybris/@MER_RELEASE@_@ARCH@/
 
+  - Name: nemo:devel:ux
+    Url: http://repo.merproject.org/obs/nemo:/devel:/ux/@MER_RELEASE@_@ARCH@/
+
+  - Name: nemo:devel:mw
+    Url: http://repo.merproject.org/obs/nemo:/devel:/mw/@MER_RELEASE@_@ARCH@/
+
+  - Name: nemo:devel:apps
+    Url: http://repo.merproject.org/obs/nemo:/devel:/apps/@MER_RELEASE@_@ARCH@/
+
 Mer Minimal:
   RepositoryOptions: --save
   Inherit:
@@ -54,9 +63,14 @@ Hybris CM 10.2:
 Wayland Qt 5:
   Repos:
     - mer:qt:devel
-  ExtraPackages:
-    - qt5-qtgui
-    - qt5-qtwayland-wayland_egl
+
+Nemo Mobile:
+  Repos:
+    - nemo:devel:mw
+    - nemo:devel:ux
+    - nemo:devel:apps
+  Groups:
+    - nemo-complete-wayland
 
 Configurations:
   - Name: mer-hybris-cm-10.2
@@ -67,3 +81,4 @@ Configurations:
       - Mer Minimal
       - Hybris CM 10.2
       - Wayland Qt 5
+      - Nemo Mobile
